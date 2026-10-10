@@ -8,7 +8,7 @@ a small, readable engineering project, deployed on AWS with a dedicated task
 identity and evaluated against a reproducible sample corpus.
 
 [Launch the AWS demo](https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws)
-· [Project walkthrough](doc/index.html)
+· [Project walkthrough](https://manisa504.github.io/ai-research-assistant/)
 · [Evaluation results](doc/evidence/evaluation_results.csv)
 · [Deployment guide](AWS_DEPLOYMENT.md)
 
@@ -189,7 +189,10 @@ companion guides. The short [project video](doc/assets/brag.mp4) uses the
 [BRAG skill](https://github.com/latent-spaces/brag); drawings use the
 [AWS architecture diagram skill](https://github.com/vidanov/aws-architecture-diagram-skill).
 Both skills are installed locally for future work. See [doc/README.md](doc/README.md)
-for the showcase's preview and asset workflow.
+for the showcase's preview and asset workflow. GitHub Pages publishes `doc/`
+through [.github/workflows/pages.yml](.github/workflows/pages.yml), without a
+Jekyll build. In repository Settings → Pages, the source must be **GitHub Actions**;
+branch publishing from `/docs` fails because that directory does not exist.
 
 References: [Titan V2 request format](https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-embed-text.html),
 [Bedrock Converse](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html),

@@ -23,6 +23,16 @@ The Bedrock integration is verified separately from service health. See the
 Service ARN:
 `arn:aws:ecs:us-east-2:263429641790:service/ai-research-assistant/ai-research-assistant`.
 
+## Static project showcase
+
+The portfolio walkthrough is hosted separately at
+https://manisa504.github.io/ai-research-assistant/ using GitHub Pages.
+`.github/workflows/pages.yml` publishes the existing `doc/` folder directly.
+Set the Pages source to **GitHub Actions**, not the nonexistent `/docs` branch
+folder. The showcase contains static evidence and links to the ECS application;
+Bedrock inference and AWS credentials remain in the application runtime.
+The three architecture drawings describe that AWS application, not Pages hosting.
+
 ## Hosting choice
 
 Use ECS Express Mode on Fargate. AWS has closed App Runner to new customers,

@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "timestamp_utc": "2026-10-10T19:08:40.565665+00:00",
+  "timestamp_utc": "2026-10-10T21:58:59.264130+00:00",
   "checks": [
     "40 relative asset/fragment links resolve",
     "desktop: no horizontal overflow",

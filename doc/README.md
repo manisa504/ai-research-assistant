@@ -40,11 +40,22 @@ in a recruiter feed; no third-party soundtrack is redistributed.
 
 ## Hosting
 
-Upload the contents of `doc/` to any static host. Relative URLs work under a
-repository subpath. GitHub Pages accepts `/docs` or `/` on its publishing branch,
-so publishing this requested singular `doc/` directory requires copying its
-contents to the root of a dedicated Pages branch. No Node app runtime or CI/CD
-pipeline is necessary.
+Live showcase: https://manisa504.github.io/ai-research-assistant/
+
+The workflow in `.github/workflows/pages.yml` uploads `doc/` directly as the
+Pages artifact. There is no Jekyll or Node build. In repository **Settings →
+Pages → Build and deployment**, select **GitHub Actions** as the source.
+Pushes to `main` that change `doc/` or the workflow publish automatically; use
+**Actions → Publish project showcase → Run workflow** to republish manually.
+
+The previous branch source `/docs` failed because this project uses singular
+`doc/`. Keep that directory and the workflow's `path: doc` consistent. Do not
+select `/docs` or add a Jekyll theme. Relative assets work under the repository
+subpath, including diagrams, evidence, the sample PDF and the project video.
+The static site makes no AWS calls; the live-demo buttons open the separate
+Bedrock application on ECS. Only `doc/` is included in the Pages artifact.
+
+See [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 ## Deployed Bedrock flow
 
