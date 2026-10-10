@@ -84,22 +84,49 @@ def deploy(expected_account: str):
         aws("iam", "attach-role-policy", "--role-name", role_name,
             "--policy-arn", f"arn:aws:iam::aws:policy/service-role/{policy}")
         roles[suffix] = role["Role"]["Arn"]
+    task_name = f"{NAME}-bedrock"
+    trust = json.dumps({"Version": "2012-10-17", "Statement": [{
+        "Effect": "Allow", "Principal": {"Service": "ecs-tasks.amazonaws.com"},
+        "Action": "sts:AssumeRole", "Condition": {
+            "StringEquals": {"aws:SourceAccount": account},
+            "ArnLike": {"aws:SourceArn": f"arn:aws:ecs:{REGION}:{account}:*"},
+        },
+    }]})
+    task_role = get_or_create(
+        ("iam", "get-role", "--role-name", task_name),
+        ("iam", "create-role", "--role-name", task_name,
+         "--assume-role-policy-document", trust), "NoSuchEntity",
+    )["Role"]["Arn"]
+    policy = Path("iam/bedrock-task-policy.json").read_text().replace("us-east-2", REGION)
+    aws("iam", "put-role-policy", "--role-name", task_name,
+        "--policy-name", "InvokeResearchModels", "--policy-document", policy)
     aws("ecs", "create-cluster", "--cluster-name", NAME)
     print("Allowing IAM roles to propagate before service creation…", flush=True)
     time.sleep(60)
-    response = aws(
-        "ecs", "create-express-gateway-service", "--service-name", NAME,
-        "--cluster", NAME, "--execution-role-arn", roles["execution"],
-        "--infrastructure-role-arn", roles["infrastructure"],
-        "--primary-container", json.dumps({"image": image, "containerPort": 8501}),
-        "--cpu", "256", "--memory", "1024", "--cpu-architecture", "ARM64",
-        "--health-check-path", "/_stcore/health",
-        "--scaling-target", json.dumps({"minTaskCount": 1, "maxTaskCount": 1}),
-        "--tags", "key=Project,value=ai-research-assistant",
-    )
+    primary = json.dumps({"image": image, "containerPort": 8501,
+        "environment": [{"name": "AWS_DEFAULT_REGION", "value": REGION}]})
+    service_arn = f"arn:aws:ecs:{REGION}:{account}:service/{NAME}/{NAME}"
+    try:
+        aws("ecs", "describe-express-gateway-service", "--service-arn", service_arn)
+        exists = True
+    except subprocess.CalledProcessError as error:
+        if "ServiceNotFoundException" not in error.stderr:
+            raise
+        exists = False
+    common = ("--primary-container", primary, "--task-role-arn", task_role,
+              "--cpu", "256", "--memory", "1024", "--cpu-architecture", "ARM64",
+              "--health-check-path", "/_stcore/health",
+              "--scaling-target", json.dumps({"minTaskCount": 1, "maxTaskCount": 1}))
+    if exists:
+        response = aws("ecs", "update-express-gateway-service", "--service-arn", service_arn, *common)
+    else:
+        response = aws("ecs", "create-express-gateway-service", "--service-name", NAME,
+                       "--cluster", NAME, "--execution-role-arn", roles["execution"],
+                       "--infrastructure-role-arn", roles["infrastructure"], *common,
+                       "--tags", "key=Project,value=ai-research-assistant")
     Path("deployment.json").write_text(json.dumps(response, indent=2) + "\n")
     print(json.dumps(response, indent=2))
-    print("Service creation submitted. Monitor the service ARN in deployment.json.")
+    print("Service deployment submitted. Monitor the service ARN in deployment.json.")
 
 
 if __name__ == "__main__":

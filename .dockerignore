@@ -5,3 +5,6 @@
 !document_processor.py
 !.streamlit/
 !.streamlit/config.toml
+!bedrock_client.py
+!rag.py
+!agent.py

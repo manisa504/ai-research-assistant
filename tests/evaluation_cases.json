@@ -1,0 +1,14 @@
+[
+ {"id":"ocean","question":"What did the team measure?","page":1,"terms":["ocean","temperature"]},
+ {"id":"stations","question":"How many coastal stations were used?","page":1,"terms":["three|3"]},
+ {"id":"frequency","question":"How often were measurements collected?","page":1,"terms":["daily|every day"]},
+ {"id":"duration","question":"For how many days were measurements collected?","page":1,"terms":["thirty|30"]},
+ {"id":"temperature","question":"What was the average temperature?","page":2,"terms":["18","celsius"]},
+ {"id":"salinity","question":"Was salinity measured?","page":2,"terms":["not|no|didn't"]},
+ {"id":"depth","question":"Were deep-ocean conditions measured?","page":2,"terms":["not|no|didn't"]},
+ {"id":"fiction","question":"Is this study fictional or real?","page":1,"terms":["fictional|fiction"]},
+ {"id":"purpose","question":"What is the purpose of these notes?","page":1,"accepted_pages":[1,2],"terms":["demonstration|testing"]},
+ {"id":"absent-budget","question":"What was the research budget in dollars?","absent":true},
+ {"id":"absent-authors","question":"What are the researchers' full names?","absent":true},
+ {"id":"absent-gps","question":"What are the exact GPS coordinates of the stations?","absent":true}
+]

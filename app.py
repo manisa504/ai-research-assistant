@@ -1,6 +1,14 @@
-"""Steps 1–2: local PDF upload, extraction, and chunk preview."""
+"""PDF research assistant: Bedrock embeddings, FAISS retrieval and cited answers."""
 
 from dataclasses import asdict
+import hashlib
+import json
+
+from botocore.exceptions import BotoCoreError, ClientError
+
+from agent import ask
+from bedrock_client import BedrockClient
+from rag import RAGIndex, MAX_CHUNKS
 
 import streamlit as st
 
@@ -10,8 +18,8 @@ from document_processor import DocumentProcessingError, chunk_pages, extract_pdf
 def main() -> None:
     st.set_page_config(page_title="AI Research Assistant", page_icon="📚", layout="wide")
     st.title("AI Research Assistant")
-    st.write("Upload PDFs and inspect their text before asking questions in a later step.")
-    st.info("Steps 1–2: PDF upload and text preparation. Question answering is not connected yet.")
+    st.write("Upload PDFs, build a searchable index, and ask questions with page citations.")
+    st.caption("Amazon Bedrock • Titan embeddings • Nova Lite answers • FAISS search")
 
     with st.sidebar:
         st.header("Text preparation")
@@ -70,9 +78,56 @@ def main() -> None:
     if not uploaded_files:
         st.info("Upload a PDF to see its pages and text chunks.")
 
+    # Any upload/settings change invalidates old evidence before the next question.
+    signature = hashlib.sha256(json.dumps(
+        [asdict(chunk) for chunk in all_chunks], sort_keys=True
+    ).encode()).hexdigest()
+    if st.session_state.get("index_signature") != signature:
+        st.session_state.pop("rag_index", None)
+        st.session_state.pop("last_answer", None)
+    st.subheader("Build the document index")
+    st.caption(f"Sends extracted text to Amazon Bedrock in us-east-2 by default. "
+               f"Up to {MAX_CHUNKS} chunks per session. Bedrock usage incurs charges.")
+    if st.button("Build index", disabled=not all_chunks or len(all_chunks) > MAX_CHUNKS):
+        try:
+            with st.spinner("Embedding document chunks with Amazon Bedrock…"):
+                index = RAGIndex.build(all_chunks, BedrockClient())
+            st.session_state["rag_index"] = index
+            st.session_state["index_signature"] = signature
+            st.success(f"Indexed {len(all_chunks)} chunks. Ready for document questions.")
+        except (BotoCoreError, ClientError, ValueError) as error:
+            st.error(f"Could not build the index: {error}")
+    index = st.session_state.get("rag_index")
+    st.caption("Index ready." if index is not None else "Build the index to ask about your PDFs.")
+
     st.subheader("Ask a question")
-    st.text_input("Your question", disabled=True, placeholder="Available after Bedrock integration")
-    st.button("Ask", disabled=True)
+    mode = st.radio("Question mode", ["Auto", "Documents", "General"], horizontal=True)
+    st.caption("Auto uses your documents when uploaded. Use General or prefix ‘general:’ "
+               "for a question outside your PDFs. General answers have no document citations.")
+    with st.form("question_form"):
+        question = st.text_input("Your question", max_chars=2000,
+                                 placeholder="What are the findings in the uploaded notes?")
+        submitted = st.form_submit_button("Ask")
+    if submitted:
+        try:
+            with st.spinner("Asking Amazon Bedrock…"):
+                st.session_state["last_answer"] = ask(
+                    question, BedrockClient(), index, mode, bool(current)
+                )
+        except (BotoCoreError, ClientError, ValueError) as error:
+            st.session_state.pop("last_answer", None)
+            st.error(f"Could not answer: {error}")
+    answer = st.session_state.get("last_answer")
+    if answer is not None:
+        st.caption(f"Answer mode: {answer.route}")
+        st.text(answer.text)
+        if answer.sources:
+            with st.expander("Supporting evidence", expanded=True):
+                for source in answer.sources:
+                    st.text(f'{source["filename"]}, page {source["page"]} — {source["quote"]}')
+        if answer.retrieved:
+            with st.expander("Retrieved chunks"):
+                st.dataframe(answer.retrieved, hide_index=True)
 
 
 if __name__ == "__main__":

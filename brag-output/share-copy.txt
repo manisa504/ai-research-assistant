@@ -1,0 +1,1 @@
+I built a PDF research assistant that answers with Amazon Bedrock and links supported claims back to a source page. Python, FAISS, a scoped AWS task role, and a reproducible demonstration evaluation — with the code and evidence available to inspect.

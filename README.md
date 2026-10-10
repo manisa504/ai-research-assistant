@@ -1,13 +1,96 @@
 # AI Research Assistant
 
-A beginner-friendly Python 3.12 application for preparing PDF documents for
-retrieval-augmented generation (RAG). **Only Steps 1 and 2 are implemented.**
-You can upload PDFs, read extracted pages, and inspect overlapping text chunks.
-Question answering is visibly disabled until Bedrock is integrated.
+**Ask a PDF a question. Inspect the evidence behind the answer.**
+
+A working Python 3.12 RAG application that turns uploaded PDFs into searchable,
+page-referenced evidence using **Amazon Bedrock, FAISS, and Streamlit**. Built as
+a small, readable engineering project, deployed on AWS with a dedicated task
+identity and evaluated against a reproducible sample corpus.
+
+[Launch the AWS demo](https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws)
+· [Project walkthrough](doc/index.html)
+· [Evaluation results](doc/evidence/evaluation_results.csv)
+· [Deployment guide](AWS_DEPLOYMENT.md)
+
+![Actual application: a Bedrock answer with page citations](doc/evidence/03-answer.png)
+
+## What works
+
+- Upload multiple PDFs; extract text with PyMuPDF while preserving filenames and
+  one-based page numbers, including blank pages.
+- Preview overlapping, page-bound text chunks. Defaults: 200 words, 40-word overlap.
+- Explicitly build a session-local **FAISS IndexFlatIP** with real **Titan V2**
+  embeddings (256 dimensions, normalized for cosine search).
+- Ask document questions: retrieve top four chunks, generate a **Nova Lite** answer,
+  and validate source IDs and verbatim evidence quotes before rendering citations.
+- Abstain when support is absent or the model's evidence cannot be verified.
+- Route general questions directly to Bedrock with a simple rule and a UI override.
+- Clear stale indexes and answers when documents or chunk settings change.
+
+The original Steps 1–2 restriction is superseded. Bedrock question answering is
+core functionality; [AGENTS.md](AGENTS.md) records the updated completion criteria.
+
+## A two-minute walkthrough
+
+1. Open the demo and upload [research_notes.pdf](sample_docs/research_notes.pdf).
+   This fictional fixture contains three pages: two with text and one blank.
+   Expect **1 document, 3 pages, 2 chunks** at default settings.
+2. Expand the file. Inspect page numbers, extracted text, and the blank-page warning.
+3. Click **Build index**. The extracted text is sent to Bedrock; wait for the
+   confirmation that two chunks were indexed.
+4. Ask **“What was the average temperature?”** Expect 18 degrees Celsius and
+   **`[research_notes.pdf, p. 2]`**. Expand supporting evidence to inspect the quote.
+5. Ask **“What was the research budget in dollars?”** Expect an explicit
+   insufficient-information response.
+6. Select **General** and ask **“What is retrieval augmented generation?”**
+   The response uses direct LLM inference and has no document citations.
+
+Auto mode uses document retrieval whenever PDFs are uploaded. Without uploads,
+questions mentioning a PDF/document/report use the document path; other questions
+use general inference. Prefix `general:` or select a mode to override this rule.
+
+## Architecture
+
+### AWS deployment
+
+![AWS deployment diagram](doc/diagrams/aws-deployment.drawio.png)
+
+[Editable draw.io source](doc/diagrams/aws-deployment.drawio)
+· [Architecture notes](doc/diagrams/aws-deployment.md)
+
+One Fargate task serves Streamlit behind a managed HTTPS Application Load Balancer
+in **us-east-2 (Ohio)**. The task's IAM role permits `bedrock:InvokeModel` on the
+two selected models. ECR, CloudWatch, and separate execution/infrastructure roles
+support deployment. See the deployment guide for the App Runner constraints that
+led to ECS Express Mode.
+
+### Document ingestion
+
+![Document ingestion diagram](doc/diagrams/document-pipeline.drawio.png)
+
+[Editable source](doc/diagrams/document-pipeline.drawio)
+· [Pipeline notes](doc/diagrams/document-pipeline.md)
+
+### Retrieval and answers
+
+![Question answering diagram](doc/diagrams/answer-flow.drawio.png)
+
+[Editable source](doc/diagrams/answer-flow.drawio)
+· [Answer-flow notes](doc/diagrams/answer-flow.md)
+
+## Engineering decisions
+
+| Decision | Reason and tradeoff |
+|---|---|
+| Keep chunks within pages | Citations map directly to the PDF viewer; context across page boundaries may be lost. |
+| Separate extraction and indexing | Users can inspect text before sending it to Bedrock or incurring inference charges. |
+| FAISS cosine search in session memory | A readable local implementation without a database; indexes disappear with the session. |
+| Validate source IDs and exact quotes | Reject fabricated provenance; this does **not** prove every claim is logically entailed. |
+| Atomic index build and invalidation | Failed API calls never publish a partial index; changed uploads cannot reuse old evidence. |
+| Scoped task role, standard credential chain | No AWS keys in code, Docker images, or application configuration. |
+| Small rule-based router | Predictable behavior, inspectable code, and explicit user control. |
 
 ## Run locally
-
-Clone the repository, then create a local environment:
 
 ```bash
 git clone https://github.com/manisa504/ai-research-assistant.git
@@ -15,112 +98,95 @@ cd ai-research-assistant
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+aws login --profile research --region us-east-2
+export AWS_PROFILE=research
+export AWS_DEFAULT_REGION=us-east-2
 python -m streamlit run app.py
 ```
 
-Open http://localhost:8501. No AWS account, credentials, or environment variables
-are needed for these steps. The app makes no Bedrock calls.
+Open http://localhost:8501. PDF parsing works without credentials; indexing and
+answers require authenticated Bedrock access. IAM Identity Center profiles also
+work. `.env.example` documents optional settings; export them in your shell
+(the app does not automatically load `.env`). `boto3[crt]` supports the AWS CLI
+login credential provider.
 
-## Step 1: Streamlit interface
+Default models: `amazon.titan-embed-text-v2:0` and `amazon.nova-lite-v1:0`.
+Override with `BEDROCK_EMBEDDING_MODEL` / `BEDROCK_CHAT_MODEL`; the embedding adapter
+expects the **Titan V2** request format, and changing deployed models requires a
+matching IAM policy. Both defaults were invoked successfully in Ohio.
 
-Implemented a multi-PDF uploader, document/page/chunk counts, sidebar chunk
-settings, and a disabled question input explaining the current scope.
+## Verification and evidence
 
-Verify: open the app without uploading anything. Counts should be zero, the
-upload prompt should appear, and the question input and Ask button should be
-disabled. Automated verification:
-
-```bash
-python -m pytest tests/test_app.py -q
-```
-
-## Step 2: PDF extraction and chunking
-
-`document_processor.py` uses PyMuPDF to extract text in approximate reading order
-and keeps the filename and one-based PDF page number. Blank pages remain in the
-page list, so references do not shift. Chunks use whitespace-separated words:
-200 words with 40 words of overlap by default. They never span pages; these are
-word counts, not Bedrock token counts. Whitespace is normalized inside chunks.
-
-Verify:
-
-1. Upload `sample_docs/research_notes.pdf`: expect one document, three pages,
-   and two chunks with the default settings.
-2. Expand the document and select each page. The first two contain notes; the
-   third is blank and triggers a warning. Chunks reference pages 1 and 2.
-3. Adjust the sidebar settings or upload a longer PDF to inspect overlapping
-   chunks. Upload multiple PDFs to check separate filenames.
-4. Remove all files: previews and counts should clear.
-5. Upload an invalid file renamed with a `.pdf` extension or a password-protected
-   PDF: an error should appear while other valid files still work.
+The recorded run on **October 10, 2026** includes **39 passing offline tests** and
+**12/12 passing real-Bedrock evaluation cases**. These are demonstration results,
+not a claim of production accuracy. The corpus has only two text chunks, so
+retrieval coverage at top two is an intentionally modest check.
 
 ```bash
-python -m pytest tests/test_document_processor.py -q
 python -m pytest -q
+AWS_PROFILE=research python evaluate.py
+python -m pip install -r requirements-dev.txt
+python -m playwright install chromium
+python scripts/browser_smoke.py --url https://YOUR_DEPLOYED_ENDPOINT
 ```
 
-Tests construct PDFs in memory and cover extraction, page references, blank
-pages, invalid/encrypted/oversized files, chunk overlap and boundaries, invalid
-settings, and the Streamlit interface including upload removal.
+Offline tests exercise real PDF parsing/FAISS and mock Bedrock responses. They
+cover overlap, blank pages, malformed/encrypted/oversized inputs, invalid vectors,
+source validation, routing, upload removal, and stale-index invalidation.
+`evaluate.py` makes paid Bedrock calls and records retrieval relevance, source
+validity, expected-answer phrase matches, and absent-information behavior in a
+[CSV](doc/evidence/evaluation_results.csv). Phrase matching is a basic regression
+check; it is not a semantic judge. Each run overwrites the results.
 
-## Files and limits
+The [browser smoke test](scripts/browser_smoke.py) exercises the actual UI:
+upload → embed → retrieve → cited answer → abstention → general answer.
+[Verification report](doc/evidence/verification.md) · [JUnit report](doc/evidence/pytest.xml)
+· [Browser results](doc/evidence/browser-smoke.json).
+
+## Repository map
 
 ```text
-ai-research-assistant/
-├── app.py
-├── document_processor.py
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── .streamlit/config.toml
-├── Dockerfile
-├── .dockerignore
-├── deploy_aws.py
-├── AWS_DEPLOYMENT.md
-├── README.md
-├── sample_docs/
-│   └── research_notes.pdf
-└── tests/
-    ├── test_app.py
-    └── test_document_processor.py
+app.py                    Streamlit upload, index, question and evidence UI
+document_processor.py     PDF extraction and page-bound word chunks
+bedrock_client.py         Titan InvokeModel + Nova Converse adapter
+rag.py                    FAISS search, evidence validation, citations
+agent.py                  One routing decision and direct inference
+evaluate.py               Real-Bedrock evaluation → CSV
+deploy_aws.py              Docker/ECR/ECS create-or-update deployment
+iam/                      Generated baseline and scoped task policy
+tests/                    Offline tests and 12 evaluation cases
+sample_docs/              Public fictional demo PDF
+doc/                      Static portfolio site, diagrams and test evidence
+brag-output/              Reproducible launch-video plan and composition
 ```
 
-PDFs are limited to 20 MB each by Streamlit and the processor. Uploads and parsed text stay
-in session memory; nothing is saved to disk or shared through a global cache.
-Removing a file clears its parsed state on the next rerun. Refreshing or ending
-the session can discard the documents. Upload only files that fit the memory
-available on your machine; there is no aggregate upload quota yet.
+## Deployment, costs, and limits
 
-Image-only scans need OCR, which is not implemented. Complex columns, tables,
-and equations may extract imperfectly. No retrieval, embeddings, answers, or
-citations are generated in this version.
+[Follow AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for model access, IAM, Docker,
+deployment, verification, costs, and cleanup. Fargate, the load balancer, IPv4,
+logs, image storage, and Bedrock input/output usage incur charges. This public
+demo has no application login or per-user usage quota.
 
-## AWS deployment
+PDFs are limited to **20 MiB each**; indexing is capped at **200 chunks** per
+session and 12,000 characters per chunk. OCR, persistent storage, complex table
+parsing, conversation memory, and production authentication are not implemented.
+Uploads, text, embeddings, and FAISS stay in session memory and can disappear on
+refresh, disconnect, or deployment. Local indexes are **not durable shared storage**.
+One task is the steady-state target; deployments can temporarily run replacements.
+Treat PDF content as untrusted and review cited evidence; prompt instructions and
+quote checks do not eliminate hallucination or every prompt-injection attempt.
 
-The PDF preparation app is deployed to ECS Express Mode in `us-east-2` (Ohio):
-https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws
+## Showcase assets
 
-The deployment completed successfully. HTTPS health and a real browser PDF
-upload/page/chunk preview were verified. Question answering remains disabled.
-See [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for authentication, deployment,
-verification, costs, and cleanup. This is a single-task demonstration with
-session-only document storage.
+Preview the responsive walkthrough with `python -m http.server 8765 --directory doc`.
+Open http://localhost:8765. Architecture drawings include editable sources and
+companion guides. The short [project video](doc/assets/brag.mp4) uses the
+[BRAG skill](https://github.com/latent-spaces/brag); drawings use the
+[AWS architecture diagram skill](https://github.com/vidanov/aws-architecture-diagram-skill).
+Both skills are installed locally for future work. See [doc/README.md](doc/README.md)
+for the showcase's preview and asset workflow.
 
-## Later application steps (not implemented)
-
-- Step 3: Bedrock embeddings and local FAISS indexing.
-- Step 4: Evidence-based answers with filename/page citations and explicit
-  insufficient-evidence responses.
-- Step 5: A simple rule-based document/general-question router.
-- Step 6: 10–15 question-answer evaluation cases and CSV results.
-
-Those steps will add `bedrock_client.py`, `rag.py`, `agent.py`, RAG
-and routing tests, and evaluation cases as their behavior becomes available.
-Deployment documentation will cover model access, IAM permissions, costs, and
-service identity. Local AWS development will use the standard credential chain;
-deployment will use a supported service role. Never commit AWS access keys.
-The initial deployment will be single-instance: local FAISS indexes and uploads
-will not provide durable or shared storage.
-
-API references: [Streamlit file uploads](https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader)
-and [PyMuPDF file handling](https://pymupdf.readthedocs.io/en/latest/how-to-open-a-file.html).
+References: [Titan V2 request format](https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-embed-text.html),
+[Bedrock Converse](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html),
+[Streamlit uploads](https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader),
+[PyMuPDF](https://pymupdf.readthedocs.io/en/latest/how-to-open-a-file.html).

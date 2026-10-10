@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "empty session has no index",
+    "sample upload preserves 3 pages and produces 2 chunks",
+    "real Titan embeddings build FAISS index",
+    "real Nova answer gives 18 Celsius with page 2 citation",
+    "absent budget produces explicit abstention",
+    "General mode routes directly to Bedrock"
+  ],
+  "url": "https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws",
+  "timestamp_utc": "2026-10-10T19:00:12.337176+00:00"
+}

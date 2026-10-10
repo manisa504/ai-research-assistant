@@ -1,0 +1,45 @@
+{
+  "Policies": [
+    {
+      "Policy": {
+        "Id": "IamPolicyAutopilot",
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "bedrock:ApplyGuardrail",
+              "bedrock:InvokeTool"
+            ],
+            "Resource": [
+              "arn:aws:bedrock::263429641790:system-tool/*",
+              "arn:aws:bedrock:us-east-2:263429641790:guardrail-profile/*",
+              "arn:aws:bedrock:us-east-2:263429641790:guardrail/*"
+            ]
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "bedrock:CallWithBearerToken",
+              "bedrock:InvokeModel"
+            ],
+            "Resource": [
+              "*"
+            ]
+          }
+        ]
+      },
+      "PolicyType": "Identity"
+    }
+  ],
+  "Warnings": [
+    {
+      "WarningType": "WildcardResource",
+      "Location": {
+        "PolicyIndex": 0,
+        "StatementIndex": 1
+      },
+      "Message": "Statement could not be scoped to specific resources and uses Resource \"*\". Review whether broad resource access is intended."
+    }
+  ]
+}

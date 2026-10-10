@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt \
     && useradd --create-home --uid 10001 appuser
 
-COPY app.py document_processor.py ./
+COPY app.py document_processor.py bedrock_client.py rag.py agent.py ./
 COPY .streamlit/config.toml .streamlit/config.toml
 USER appuser
 

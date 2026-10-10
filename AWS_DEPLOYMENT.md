@@ -2,8 +2,8 @@
 
 Deployment target: account `263429641790`, region `us-east-2` (Ohio).
 Deployer role: `arn:aws:iam::263429641790:role/managed/AccountFullAccessRole`.
-The application currently implements PDF upload and chunking only. Deployment
-does not enable Bedrock, retrieval, or question answering.
+The application implements PDF ingestion, Titan embeddings, local FAISS retrieval,
+and Nova Lite question answering with validated filename/page citations.
 
 ## Current deployment status
 
@@ -16,13 +16,9 @@ propagation; a retry completed successfully and receives 100% of traffic.
 Live application:
 https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws
 
-Verification passed: trusted HTTPS certificate, health endpoint returning `ok`,
-and a real browser session uploading the sample PDF, showing three pages and
-two chunks, opening a page preview, and confirming question answering is disabled.
-Public DNS resolved correctly; browser and HTTPS checks used that public address
-explicitly because this Mac retained an earlier negative DNS cache entry. A
-client that queried the hostname before provisioning completed may need a few
-minutes for that cached entry to expire.
+The Bedrock integration is verified separately from service health. See the
+[recorded browser checks](doc/evidence/browser-smoke.json) and the
+[12-case real-Bedrock evaluation](doc/evidence/evaluation_results.csv).
 
 Service ARN:
 `arn:aws:ecs:us-east-2:263429641790:service/ai-research-assistant/ai-research-assistant`.
@@ -56,7 +52,7 @@ also work. A role ARN alone cannot authenticate a session.
 
 The deployer requires ECR repository/image operations, ECS Express Mode and
 cluster operations, EC2 network read access, and IAM role creation, policy
-attachment, and PassRole permissions for the two application roles. AWS may
+attachment, and PassRole permissions for the three application roles. AWS may
 also need permission to create service-linked roles on first use.
 
 `AccountFullAccessRole` is a deployer identity, not the application's runtime
@@ -86,17 +82,48 @@ AWS_PROFILE=research python3.12 deploy_aws.py --region us-east-2
 
 The script verifies the target account, checks for a default VPC, builds an
 ARM64 image, publishes it to a private ECR repository, and submits an ECS
-Express Mode service. It creates two service roles with AWS managed policies:
+Express Mode service. It creates or updates the service and creates two supporting roles with AWS managed policies:
 
 - `ai-research-assistant-execution`: image pulling and log delivery through
   `AmazonECSTaskExecutionRolePolicy`.
 - `ai-research-assistant-infrastructure`: infrastructure management through
   `AmazonECSInfrastructureRoleforExpressGatewayServices`.
 
-The current app needs no AWS task role because it calls no AWS APIs. A later
-Bedrock implementation should add a dedicated ECS task role scoped to the
-chosen models and inference actions. Model access and any required provider
-agreements must also be enabled before that feature can work.
+A third role, `ai-research-assistant-bedrock`, is the **task role** used by
+application code. Its policy allows `bedrock:InvokeModel` on only:
+
+- `arn:aws:bedrock:us-east-2::foundation-model/amazon.titan-embed-text-v2:0`
+- `arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-lite-v1:0`
+
+Converse uses the InvokeModel permission. The task trust policy restricts the
+source account and ECS region. AWS supplies temporary task credentials; no local
+profile or keys enter the image. The execution role remains separate.
+
+Both models were invoked successfully in this account/region. Before deploying
+elsewhere, verify model availability and the account's model access/provider
+requirements. ListFoundationModels alone does not prove inference access:
+
+```bash
+aws bedrock list-foundation-models --profile research --region us-east-2
+aws bedrock-runtime converse --profile research --region us-east-2 \
+  --model-id amazon.nova-lite-v1:0 \
+  --messages '[{"role":"user","content":[{"text":"Say ready"}]}]' \
+  --inference-config '{"maxTokens":20,"temperature":0}'
+```
+
+The scoped policy in `iam/bedrock-task-policy.json` refines the deterministic
+Autopilot baseline in `iam/generated-baseline.json`: it removes unused
+Guardrail/tool/bearer-token permissions and scopes the two known regional model
+ARNs. Reproduce the baseline with:
+
+```bash
+uvx iam-policy-autopilot@latest generate-policies "$PWD/bedrock_client.py" \
+  --region us-east-2 --account 263429641790 --service-hints bedrock-runtime --pretty
+```
+
+The Docker health check requires no credentials. A locally started container
+without a credential provider can parse PDFs but cannot invoke Bedrock. Use the
+local Python environment with an authenticated profile for the full local demo.
 
 Configuration: cluster/service/repository `ai-research-assistant`, ARM64,
 0.25 vCPU, 1 GiB memory, one task, container port 8501, health endpoint
@@ -113,27 +140,30 @@ aws ecs describe-express-gateway-service --service-arn SERVICE_ARN --profile res
 ```
 
 Use the actual endpoint returned by AWS. Check `/_stcore/health`, then open
-the HTTPS endpoint and test an upload and page preview in the browser. Do not
+the HTTPS endpoint and upload the sample, build its index, and ask for the average temperature. Verify
+18 degrees Celsius with a page-2 citation and inspect the quote. Also ask for
+the absent budget to verify abstention. Do not
 infer a working URL from the service name. If IAM propagation causes an
 assume-role error, wait briefly before retrying. A failed run can leave the
 repository, roles, or cluster behind; inspect them before rerunning. This script
-creates a service; it does not automatically update an existing service.
+updates the existing service when it is found, otherwise creates it.
 
 ## Cost and storage
 
 Costs continue while the service runs, including idle time. Budget for Fargate
-CPU/memory, Application Load Balancer hours and capacity units, public IPv4
+Bedrock embedding input and Nova input/output tokens, Fargate CPU/memory, Application Load Balancer hours and capacity units, public IPv4
 addresses, ECR image storage, CloudWatch logs, and data transfer. Express Mode
 has no separate management charge. Use the AWS calculator for an estimate
 for `us-east-2`; credits and free-tier eligibility vary by account.
 
 - [Fargate pricing](https://aws.amazon.com/fargate/pricing/)
 - [Load balancer pricing](https://aws.amazon.com/elasticloadbalancing/pricing/)
+- [Bedrock pricing](https://aws.amazon.com/bedrock/pricing/)
 - [AWS Pricing Calculator](https://calculator.aws/)
 
 Uploads and parsed text are session memory only. Task replacement, deployment,
-or session loss discards them. A future local FAISS index would also be
-ephemeral and would not be durable shared storage. One steady-state task keeps
+or session loss discards them. The local FAISS index is also ephemeral and is
+not durable shared storage. One steady-state task keeps
 this initial demonstration simple; deployments may temporarily run replacement
 tasks and interrupt sessions.
 
@@ -147,7 +177,7 @@ aws ecs delete-express-gateway-service --service-arn SERVICE_ARN --profile resea
 ```
 
 Then inspect and remove this project's remaining ECR images/repository,
-CloudWatch log groups, empty ECS cluster, and the two IAM roles (detach their
+CloudWatch log groups, empty ECS cluster, and the three IAM roles (detach their
 policies first). Do not delete a shared VPC, shared load balancer, or unrelated
 resources. Deleting only tasks is insufficient: ECS will restart them, and a
 remaining load balancer can continue to incur charges.

@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "timestamp_utc": "2026-10-10T19:03:50.936621+00:00",
+  "checks": [
+    "40 relative asset/fragment links resolve",
+    "desktop: no horizontal overflow",
+    "desktop: all tabs, images and keyboard navigation pass",
+    "desktop: 20-second video loads with playback controls",
+    "mobile: no horizontal overflow",
+    "mobile: all tabs, images and keyboard navigation pass",
+    "mobile: 20-second video loads with playback controls",
+    "no browser JavaScript errors or HTTP errors"
+  ],
+  "scope": "Local static site; external sites not audited"
+}
