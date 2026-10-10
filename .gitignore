@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.env
+.aws/
+.streamlit/secrets.toml
+uploads/
+indexes/
+.DS_Store
+deployment.json
