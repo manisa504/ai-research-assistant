@@ -41,7 +41,7 @@ def main():
         print(f'{case["id"]}: {"PASS" if row["passed"] else "FAIL"} — {result.text}', flush=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="") as output:
-        writer = csv.DictWriter(output, fieldnames=rows[0].keys())
+        writer = csv.DictWriter(output, fieldnames=rows[0].keys(), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     print(f'{sum(row["passed"] for row in rows)}/{len(rows)} passed; results: {args.output}')
