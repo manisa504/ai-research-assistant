@@ -76,3 +76,14 @@ results. Hyperframes checks include runtime, layout and text contrast; the
 recorded check report is [video-check.json](video-check.json). Structural advice
 warnings about using sub-compositions are retained; they do not indicate failed
 runtime, layout or contrast checks.
+
+## Documentation consistency review
+
+The README, AWS deployment guide, portfolio index, showcase guide, and diagram
+companions were checked against `bedrock_client.py` and the deployed task policy.
+They consistently identify Titan V2 / InvokeModel, Nova Lite / Converse,
+`us-east-2`, normalized 256-dimensional embeddings, session-local FAISS storage,
+and filename/page citations. All three editable diagrams and PNG exports include
+Bedrock. Changed exports were visually reviewed, and desktop/mobile website
+checks passed before the documentation push. AGENTS.md now requires this review
+before future pushes.

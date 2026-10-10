@@ -45,3 +45,23 @@ repository subpath. GitHub Pages accepts `/docs` or `/` on its publishing branch
 so publishing this requested singular `doc/` directory requires copying its
 contents to the root of a dedicated Pages branch. No Node app runtime or CI/CD
 pipeline is necessary.
+
+## Deployed Bedrock flow
+
+| Component | Current configuration |
+|---|---|
+| Chunk and query embeddings | Amazon Bedrock `amazon.titan-embed-text-v2:0`, InvokeModel, normalized 256-dimensional vectors |
+| Document and general answers | Amazon Bedrock `amazon.nova-lite-v1:0`, Converse |
+| Region | `us-east-2`; direct regional calls, no cross-region inference profile |
+| Search and metadata | Session-local FAISS IndexFlatIP with filenames and one-based page references |
+| Runtime identity | Dedicated ECS task role permitting InvokeModel on the two model ARNs |
+
+The static `index.html` explains this flow; indexing and inference run in the
+separate Streamlit application linked from its live-demo buttons. Supporting
+evidence and source quotes are checked before the app renders document
+citations. General mode bypasses document retrieval. Session data is ephemeral.
+
+Before pushing an architecture change, update the diagram generator, editable
+draw.io files, PNG exports, companion guides, README, deployment documentation
+and website together. Review the drawings and rerun `scripts/check_showcase.py`
+against the locally served site.

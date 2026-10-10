@@ -28,3 +28,12 @@ in doc/index.html to match verified behavior. Keep model IDs, model access,
 permissions, costs, and local verification steps documented. Do not claim planned
 features are shipped. Preserve the requested architecture skill and BRAG video
 work as part of the project showcase.
+
+## Before every push
+
+Check README.md, AWS_DEPLOYMENT.md, doc/index.html, and all architecture drawings
+and companion guides against the implemented/deployed behavior. Update both the
+editable draw.io sources and their PNG exports when architecture changes. Keep
+Bedrock model/API details, FAISS storage, citations, routing, permissions, and
+limitations consistent. Verify the static website and review changed drawings
+before pushing. Do not leave documentation updates for after a code push.

@@ -73,6 +73,11 @@ led to ECS Express Mode.
 
 ### Retrieval and answers
 
+Document and query embeddings both use Titan V2 through `InvokeModel`. Nova Lite
+uses `Converse` for evidence-grounded and general answers. Both calls go to the
+regional Bedrock runtime in Ohio; the application does not use a cross-region
+inference profile.
+
 ![Question answering diagram](doc/diagrams/answer-flow.drawio.png)
 
 [Editable source](doc/diagrams/answer-flow.drawio)

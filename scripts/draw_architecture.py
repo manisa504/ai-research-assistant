@@ -74,25 +74,25 @@ def main():
     d.icon("browser", "Browser<br>Streamlit session", 130, 370, "client")
     d.icon("alb", "Application Load Balancer<br>Managed HTTPS endpoint", 610, 370, "elastic_load_balancing", "#8C4FFF", True)
     d.icon("app", "ECS Express Mode / Fargate<br>Python 3.12 · Streamlit · FAISS<br>1 ARM64 task · 0.25 vCPU / 1 GiB", 1090, 370, "fargate", "#ED7100", True)
-    d.icon("bedrock", "Amazon Bedrock<br>Titan Text Embeddings V2<br>Nova Lite · regional invocation", 2030, 370, "bedrock", "#01A88D", True)
+    d.icon("bedrock", "Amazon Bedrock runtime · Ohio<br>Titan V2 · InvokeModel<br>Nova Lite · Converse", 2030, 370, "bedrock", "#01A88D", True)
     d.edge("browser", "alb", "HTTPS")
     d.edge("alb", "app", "HTTP 8501")
-    d.edge("app", "bedrock", "InvokeModel")
+    d.edge("app", "bedrock", "Bedrock APIs")
     d.icon("ecr", "Amazon ECR<br>Immutable container image", 610, 810, "ecr", "#ED7100", True, True)
     d.icon("iam", "IAM task role<br>InvokeModel on two models only<br>Separate image/log execution role", 1090, 810, "role", "#DD344C", secondary=True)
     d.icon("logs", "Amazon CloudWatch<br>Container logs", 1550, 810, "cloudwatch_2", "#E7157B", True, True)
     d.icon("cert", "AWS Certificate Manager<br>HTTPS certificate", 2030, 810, "certificate_manager_3", "#DD344C", True, True)
-    d.edge("app", "iam", "Identity", True, True)
-    d.edge("app", "logs", "Logs", True, True)
+    d.edge("app", "iam", vertical=True, dashed=True)
+    d.edge("app", "logs", vertical=True, dashed=True)
     d.edge("app", "ecr", "Image pull", True, True)
-    d.edge("alb", "cert", "TLS", True, True)
+    d.edge("alb", "cert", vertical=True, dashed=True)
     d.note("Session isolation: PDFs, extracted text, embeddings and the FAISS index live in task memory.<br>No durable/shared document store. A refresh or task replacement can discard a session. Solid: request path. Dashed: supporting services.")
-    d.save("aws-deployment", "# AWS deployment\n\n1. Browser reaches the managed HTTPS load balancer.\n2. Traffic reaches the single Fargate task on port 8501.\n3. boto3 uses the task role to invoke Titan embeddings and Nova Lite in Ohio.\n\nECR supplies the container image; the execution role permits image pulls and logs. The dedicated task role permits only the two model ARNs. CloudWatch receives container logs. ACM manages the endpoint certificate. The diagram omits service-managed subnet details. Documents and FAISS are session-local, not durable or shared.\n")
+    d.save("aws-deployment", "# AWS deployment\n\n1. Browser reaches the managed HTTPS load balancer.\n2. Traffic reaches the single Fargate task on port 8501.\n3. boto3 uses the task role to call the regional Bedrock runtime: Titan V2 via InvokeModel and Nova Lite via Converse.\n\nECR supplies the container image; the execution role permits image pulls and logs. The dedicated task role permits bedrock:InvokeModel only on amazon.titan-embed-text-v2:0 and amazon.nova-lite-v1:0 in us-east-2. Converse uses this same IAM action. CloudWatch receives container logs. ACM manages the endpoint certificate. The diagram omits service-managed subnet details. Documents and FAISS are session-local, not durable or shared.\n")
     d = Drawing("Document ingestion · preserve the source before retrieval", "Build index is explicit: users preview the extracted pages before paying for embeddings.")
     for id, label, x, shape in [("upload", "Upload PDFs<br>20 MiB each · text PDFs", 130, "documents"),
         ("pages", "PyMuPDF extraction<br>Filename + one-based page", 610, "source_code"),
         ("chunks", "Page-bound word windows<br>200 words / 40 overlap", 1090, "document"),
-        ("embed", "Titan V2 embeddings<br>256 dimensions · normalized", 1570, "bedrock"),
+        ("embed", "Amazon Bedrock · Titan V2<br>InvokeModel · 256 dimensions<br>Normalized embeddings", 1570, "bedrock"),
         ("index", "FAISS IndexFlatIP<br>Vectors + source metadata", 2050, "gear")]:
         d.icon(id, label, x, 390, shape, "#01A88D" if id=="embed" else "#232F3D", id=="embed")
     for a,b,label in [("upload","pages","Parse"),("pages","chunks","Chunk"),("chunks","embed","Build index"),("embed","index","Cosine search")]: d.edge(a,b,label)
@@ -101,19 +101,19 @@ def main():
     d.icon("stale", "Any upload/chunk change<br>Discard old index and answer", 2050, 850, "gear", secondary=True)
     d.edge("upload","invalid","Invalid",True,error=True);d.edge("pages","blank","Empty page",True,True);d.edge("index","stale","Invalidate",True,True)
     d.note("Word windows are not model token counts. The demo caps indexing at 200 chunks.<br>Index publication is atomic: failed embedding calls do not leave a partial searchable index. No cross-user global cache.")
-    d.save("document-pipeline", "# Document ingestion\n\n1. Validate PDF bytes and extract pages in memory.\n2. Preserve blank pages and one-based metadata.\n3. Split text into overlapping windows without crossing pages.\n4. Send chunks to Titan V2 on explicit Build index.\n5. Normalize vectors and store them in FAISS beside metadata.\n\nMalformed/encrypted files are rejected individually. Upload or settings changes invalidate old evidence. The 200-chunk cap bounds demonstration usage; there is no durable/shared store.\n")
+    d.save("document-pipeline", "# Document ingestion\n\n1. Validate PDF bytes and extract pages in memory.\n2. Preserve blank pages and one-based metadata.\n3. Split text into overlapping windows without crossing pages.\n4. On explicit Build index, send chunks to Amazon Bedrock Titan V2 (amazon.titan-embed-text-v2:0) via InvokeModel in us-east-2.\n5. Store normalized 256-dimensional vectors in the session-local FAISS IndexFlatIP beside filename/page metadata.\n\nMalformed/encrypted files are rejected individually. Upload or settings changes invalidate old evidence. The 200-chunk cap bounds demonstration usage; there is no durable/shared store.\n")
     d = Drawing("Question answering · retrieve, ground, verify", "A simple router chooses documents or general knowledge. No autonomous agent loop.")
     d.icon("question", "User question<br>Auto / Documents / General", 130, 360, "client")
     d.icon("router", "Rule-based router<br>Uploaded PDFs default to RAG", 610, 360, "gear")
-    d.icon("retrieve", "Titan query embedding + FAISS<br>Top 4 relevant chunks", 1090, 360, "gear")
-    d.icon("llm", "Amazon Bedrock · Nova Lite<br>Evidence-only JSON claims", 1570, 360, "bedrock", "#01A88D", True)
+    d.icon("retrieve", "Bedrock Titan query embedding<br>FAISS cosine search<br>Top 4 relevant chunks", 1090, 360, "gear")
+    d.icon("llm", "Amazon Bedrock · Nova Lite<br>Converse · evidence-only JSON", 1570, 360, "bedrock", "#01A88D", True)
     d.icon("answer", "Validate source IDs + exact quotes<br>Render filename / page citations", 2050, 360, "document")
     for a,b,label in [("question","router",None),("router","retrieve","Documents"),("retrieve","llm","Evidence"),("llm","answer","Claims")]: d.edge(a,b,label)
-    d.icon("general", "Amazon Bedrock · Nova Lite<br>General answer · no file citations", 610, 850, "bedrock", "#01A88D", True)
+    d.icon("general", "Amazon Bedrock · Nova Lite<br>Converse · general inference<br>No document citations", 610, 850, "bedrock", "#01A88D", True)
     d.icon("abstain", "Insufficient / unverifiable evidence<br>Explicit abstention", 2050, 850, "document", "#DD344C", secondary=True)
     d.edge("router","general","General",True,True);d.edge("answer","abstain","Unsupported",True,error=True)
     d.note("Citations are built from retrieved metadata, not invented by the model. Each claim must cite an existing source and a verbatim quote.<br>This checks provenance, not full semantic entailment. Review the retrieved evidence; the 12-case evaluation is a small demonstration benchmark.")
-    d.save("answer-flow", "# Question answering\n\n1. Auto uses documents when uploaded; General and Documents explicitly override.\n2. Embed a document question and retrieve top four cosine matches.\n3. Nova Lite receives the question and retrieved evidence.\n4. Validate its JSON, source IDs and verbatim quotes before showing a cited answer.\n5. Abstain for missing/unverifiable support; use direct inference for General mode.\n\nCitation checks prove provenance, not semantic correctness. Exact-match evidence and prompt instructions do not guarantee resistance to every malicious PDF. Inspect source text and evaluate behavior.\n")
+    d.save("answer-flow", "# Question answering\n\n1. Auto uses documents when uploaded; General and Documents explicitly override.\n2. Embed the question with Bedrock Titan V2 (amazon.titan-embed-text-v2:0) and retrieve up to four cosine matches from the session-local FAISS index.\n3. Bedrock Nova Lite (amazon.nova-lite-v1:0) receives the question and retrieved evidence through Converse in us-east-2.\n4. Validate its JSON, source IDs and verbatim quotes before showing a cited answer.\n5. Abstain for missing/unverifiable support; use direct inference for General mode.\n\nCitation checks prove provenance, not semantic correctness. Exact-match evidence and prompt instructions do not guarantee resistance to every malicious PDF. Inspect source text and evaluate behavior.\n")
 
 
 if __name__ == "__main__":

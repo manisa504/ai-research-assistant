@@ -150,8 +150,9 @@ updates the existing service when it is found, otherwise creates it.
 
 ## Cost and storage
 
-Costs continue while the service runs, including idle time. Budget for Fargate
-Bedrock embedding input and Nova input/output tokens, Fargate CPU/memory, Application Load Balancer hours and capacity units, public IPv4
+Costs continue while the service runs, including idle time. Budget for
+Bedrock embedding input and Nova input/output tokens, Fargate CPU/memory,
+Application Load Balancer hours and capacity units, public IPv4
 addresses, ECR image storage, CloudWatch logs, and data transfer. Express Mode
 has no separate management charge. Use the AWS calculator for an estimate
 for `us-east-2`; credits and free-tier eligibility vary by account.

@@ -38,7 +38,7 @@
         <mxCell id="bedrock" value="" style="html=1;whiteSpace=wrap;sketch=0;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.bedrock;strokeColor=#ffffff;fillColor=#01A88D;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="2030" y="370" width="78" height="78" />
         </mxCell>
-        <mxCell id="bedrock-label" value="Amazon Bedrock&lt;br&gt;Titan Text Embeddings V2&lt;br&gt;Nova Lite · regional invocation" style="html=1;whiteSpace=wrap;sketch=0;text;align=center;verticalAlign=top;fontSize=12;fontColor=#232F3D;" vertex="1" parent="1">
+        <mxCell id="bedrock-label" value="Amazon Bedrock runtime · Ohio&lt;br&gt;Titan V2 · InvokeModel&lt;br&gt;Nova Lite · Converse" style="html=1;whiteSpace=wrap;sketch=0;text;align=center;verticalAlign=top;fontSize=12;fontColor=#232F3D;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="1935" y="472" width="270" height="85" />
         </mxCell>
         <mxCell id="edge-1" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;strokeColor=#232F3D;" edge="1" source="browser" target="alb" parent="1" value="HTTPS">
@@ -47,7 +47,7 @@
         <mxCell id="edge-2" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;strokeColor=#232F3D;" edge="1" source="alb" target="app" parent="1" value="HTTP 8501">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
-        <mxCell id="edge-3" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;strokeColor=#232F3D;" edge="1" source="app" target="bedrock" parent="1" value="InvokeModel">
+        <mxCell id="edge-3" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;strokeColor=#232F3D;" edge="1" source="app" target="bedrock" parent="1" value="Bedrock APIs">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="ecr" value="" style="html=1;whiteSpace=wrap;sketch=0;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecr;strokeColor=#ffffff;fillColor=#ED7100;" vertex="1" parent="1">
@@ -74,7 +74,7 @@
         <mxCell id="cert-label" value="AWS Certificate Manager&lt;br&gt;HTTPS certificate" style="html=1;whiteSpace=wrap;sketch=0;text;align=center;verticalAlign=top;fontSize=12;fontColor=#232F3D;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="1935" y="899" width="270" height="85" />
         </mxCell>
-        <mxCell id="edge-4" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="app" target="iam" parent="1" value="Identity">
+        <mxCell id="edge-4" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="app" target="iam" parent="1">
           <mxGeometry as="geometry" relative="1">
             <Array as="points">
               <mxPoint x="1129.0" y="464" />
@@ -84,7 +84,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="edge-5" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="app" target="logs" parent="1" value="Logs">
+        <mxCell id="edge-5" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="app" target="logs" parent="1">
           <mxGeometry as="geometry" relative="1">
             <Array as="points">
               <mxPoint x="1129.0" y="464" />
@@ -104,7 +104,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="edge-7" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="alb" target="cert" parent="1" value="TLS">
+        <mxCell id="edge-7" style="html=1;whiteSpace=wrap;sketch=0;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;strokeWidth=2;fontSize=12;labelBackgroundColor=#F5F5F5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;align=right;strokeColor=#232F3D;dashed=1;" edge="1" source="alb" target="cert" parent="1">
           <mxGeometry as="geometry" relative="1">
             <Array as="points">
               <mxPoint x="649.0" y="464" />
