@@ -7,14 +7,19 @@ and Nova Lite question answering with validated filename/page citations.
 
 ## Current deployment status
 
+**Offline as of October 10, 2026.** CloudTrail records deletion of the Express
+Mode service at 7:17 PM Pacific. The former endpoint no longer resolves.
+Run the application locally using the README instructions. The deployment
+and verification details below describe the recorded run before removal.
+
 On October 10, 2026, the `research` profile authenticated successfully.
 Organization policy denied the network check in `us-east-1`, `us-west-2`, and
 `eu-west-1`; `us-east-2` allowed it. The image, roles, cluster, and Express Mode
 service were created in Ohio. The first provisioning attempt failed during IAM
-propagation; a retry completed successfully and receives 100% of traffic.
+propagation; a retry completed successfully and received 100% of traffic before removal.
 
-Live application:
-https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws
+Former application endpoint (offline):
+`https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws`
 
 The Bedrock integration is verified separately from service health. See the
 [recorded browser checks](doc/evidence/browser-smoke.json) and the
@@ -29,7 +34,7 @@ The portfolio walkthrough is hosted separately at
 https://manisa504.github.io/ai-research-assistant/ using GitHub Pages.
 `.github/workflows/pages.yml` publishes the existing `doc/` folder directly.
 Set the Pages source to **GitHub Actions**, not the nonexistent `/docs` branch
-folder. The showcase contains static evidence and links to the ECS application;
+folder. The showcase contains static evidence, an offline notice, and local setup links;
 Bedrock inference and AWS credentials remain in the application runtime.
 The three architecture drawings describe that AWS application, not Pages hosting.
 
@@ -135,7 +140,7 @@ The Docker health check requires no credentials. A locally started container
 without a credential provider can parse PDFs but cannot invoke Bedrock. Use the
 local Python environment with an authenticated profile for the full local demo.
 
-Configuration: cluster/service/repository `ai-research-assistant`, ARM64,
+Recorded deployment configuration: cluster/service/repository `ai-research-assistant`, ARM64,
 0.25 vCPU, 1 GiB memory, one task, container port 8501, health endpoint
 `/_stcore/health`. The service uses the default VPC and an internet-facing HTTPS
 endpoint. It has no application login and is intended as a demonstration.

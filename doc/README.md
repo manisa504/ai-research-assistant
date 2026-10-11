@@ -52,14 +52,14 @@ The previous branch source `/docs` failed because this project uses singular
 `doc/`. Keep that directory and the workflow's `path: doc` consistent. Do not
 select `/docs` or add a Jekyll theme. Relative assets work under the repository
 subpath, including diagrams, evidence, the sample PDF and the project video.
-The static site makes no AWS calls; the live-demo buttons open the separate
-Bedrock application on ECS. Only `doc/` is included in the Pages artifact.
+The static site makes no AWS calls. The ECS demo is offline; the page links to
+the recorded walkthrough and local setup instructions. Only `doc/` is included in the Pages artifact.
 
 See [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-## Deployed Bedrock flow
+## Recorded Bedrock deployment flow
 
-| Component | Current configuration |
+| Component | Recorded configuration |
 |---|---|
 | Chunk and query embeddings | Amazon Bedrock `amazon.titan-embed-text-v2:0`, InvokeModel, normalized 256-dimensional vectors |
 | Document and general answers | Amazon Bedrock `amazon.nova-lite-v1:0`, Converse |
@@ -68,7 +68,8 @@ See [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pa
 | Runtime identity | Dedicated ECS task role permitting InvokeModel on the two model ARNs |
 
 The static `index.html` explains this flow; indexing and inference run in the
-separate Streamlit application linked from its live-demo buttons. Supporting
+separate Streamlit application, which can be run locally. The live ECS service
+was removed on October 10, 2026. Supporting
 evidence and source quotes are checked before the app renders document
 citations. General mode bypasses document retrieval. Session data is ephemeral.
 

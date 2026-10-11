@@ -4,10 +4,10 @@
 
 A working Python 3.12 RAG application that turns uploaded PDFs into searchable,
 page-referenced evidence using **Amazon Bedrock, FAISS, and Streamlit**. Built as
-a small, readable engineering project, deployed on AWS with a dedicated task
+a small, readable engineering project, previously deployed on AWS with a dedicated task
 identity and evaluated against a reproducible sample corpus.
 
-[Launch the AWS demo](https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws)
+**Live AWS demo: offline** · [Run locally](#run-locally)
 · [Project walkthrough](https://manisa504.github.io/ai-research-assistant/)
 · [Evaluation results](doc/evidence/evaluation_results.csv)
 · [Deployment guide](AWS_DEPLOYMENT.md)
@@ -32,7 +32,7 @@ core functionality; [AGENTS.md](AGENTS.md) records the updated completion criter
 
 ## A two-minute walkthrough
 
-1. Open the demo and upload [research_notes.pdf](sample_docs/research_notes.pdf).
+1. Run the application locally (see below) and upload [research_notes.pdf](sample_docs/research_notes.pdf).
    This fictional fixture contains three pages: two with text and one blank.
    Expect **1 document, 3 pages, 2 chunks** at default settings.
 2. Expand the file. Inspect page numbers, extracted text, and the blank-page warning.
@@ -58,7 +58,7 @@ use general inference. Prefix `general:` or select a mode to override this rule.
 [Editable draw.io source](doc/diagrams/aws-deployment.drawio)
 · [Architecture notes](doc/diagrams/aws-deployment.md)
 
-One Fargate task serves Streamlit behind a managed HTTPS Application Load Balancer
+The recorded AWS deployment used one Fargate task serving Streamlit behind a managed HTTPS Application Load Balancer
 in **us-east-2 (Ohio)**. The task's IAM role permits `bedrock:InvokeModel` on the
 two selected models. ECR, CloudWatch, and separate execution/infrastructure roles
 support deployment. See the deployment guide for the App Runner constraints that
@@ -169,8 +169,8 @@ brag-output/              Reproducible launch-video plan and composition
 
 [Follow AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for model access, IAM, Docker,
 deployment, verification, costs, and cleanup. Fargate, the load balancer, IPv4,
-logs, image storage, and Bedrock input/output usage incur charges. This public
-demo has no application login or per-user usage quota.
+logs, image storage, and Bedrock input/output usage incur charges. The live demo was removed on October 10, 2026. The application has no
+login or per-user usage quota.
 
 PDFs are limited to **20 MiB each**; indexing is capped at **200 chunks** per
 session and 12,000 characters per chunk. OCR, persistent storage, complex table

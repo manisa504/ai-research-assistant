@@ -1,5 +1,9 @@
 # AWS deployment
 
+This drawing and its PNG export document the verified deployment before removal.
+The live ECS service was deleted on October 10, 2026; its endpoint is offline.
+The architecture below remains the reference for redeployment.
+
 1. Browser reaches the managed HTTPS load balancer.
 2. Traffic reaches the single Fargate task on port 8501.
 3. boto3 uses the task role to call the regional Bedrock runtime: Titan V2 via InvokeModel and Nova Lite via Converse.
