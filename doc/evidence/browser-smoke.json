@@ -8,6 +8,7 @@
     "absent budget produces explicit abstention",
     "General mode routes directly to Bedrock"
   ],
-  "url": "https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws",
-  "timestamp_utc": "2026-10-10T19:00:12.337176+00:00"
+  "url": "https://REDACTED_DEPLOYMENT_ENDPOINT",
+  "timestamp_utc": "2026-10-10T19:00:12.337176+00:00",
+  "redaction_note": "Deployment endpoint removed for privacy; checks and timestamp preserved from the recorded run."
 }

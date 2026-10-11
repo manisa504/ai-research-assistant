@@ -1,7 +1,8 @@
 """Build and deploy the current app to ECS Express Mode using AWS CLI v2.
 
 Uses the caller's AWS credential chain. No credentials are copied into Docker.
-Run from this directory: python deploy_aws.py --region us-east-2
+Run from this directory:
+python deploy_aws.py --region us-east-2 --expected-account YOUR_AWS_ACCOUNT_ID
 """
 
 import argparse
@@ -132,8 +133,13 @@ def deploy(expected_account: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--region", default="us-east-2")
-    parser.add_argument("--expected-account", default="263429641790")
+    parser.add_argument("--expected-account", required=True,
+                        help="Your 12-digit AWS account ID; checked before deploying.")
     arguments = parser.parse_args()
+    if len(arguments.expected_account) != 12 or not all(
+        "0" <= digit <= "9" for digit in arguments.expected_account
+    ):
+        parser.error("--expected-account must be a 12-digit AWS account ID")
     REGION = arguments.region
     NAME = "ai-research-assistant"
     try:

@@ -1,7 +1,7 @@
 # AWS deployment
 
-Deployment target: account `263429641790`, region `us-east-2` (Ohio).
-Deployer role: `arn:aws:iam::263429641790:role/managed/AccountFullAccessRole`.
+Deployment region: `us-east-2` (Ohio). Supply your own AWS account ID and
+deployer identity when following this guide; deployed resource identifiers are omitted.
 The application implements PDF ingestion, Titan embeddings, local FAISS retrieval,
 and Nova Lite question answering with validated filename/page citations.
 
@@ -18,15 +18,14 @@ Organization policy denied the network check in `us-east-1`, `us-west-2`, and
 service were created in Ohio. The first provisioning attempt failed during IAM
 propagation; a retry completed successfully and received 100% of traffic before removal.
 
-Former application endpoint (offline):
-`https://ai-9cc795dd20a04970bca0dd0293f8831e.ecs.us-east-2.on.aws`
+The former application endpoint is offline and has been removed from this guide.
 
 The Bedrock integration is verified separately from service health. See the
 [recorded browser checks](doc/evidence/browser-smoke.json) and the
 [12-case real-Bedrock evaluation](doc/evidence/evaluation_results.csv).
 
-Service ARN:
-`arn:aws:ecs:us-east-2:263429641790:service/ai-research-assistant/ai-research-assistant`.
+For a new deployment, use the service identifier returned by AWS.
+The previous deployment's service ARN is omitted.
 
 ## Static project showcase
 
@@ -70,8 +69,8 @@ cluster operations, EC2 network read access, and IAM role creation, policy
 attachment, and PassRole permissions for the three application roles. AWS may
 also need permission to create service-linked roles on first use.
 
-`AccountFullAccessRole` is a deployer identity, not the application's runtime
-role. Do not add credentials to source files or container environment variables.
+Use a separate deployer identity rather than the application's runtime role.
+Do not add credentials to source files or container environment variables.
 
 ## Verify the container
 
@@ -92,7 +91,8 @@ AWS profiles, `.env`, `.git`, and local PDFs are excluded from its build context
 ## Deploy
 
 ```bash
-AWS_PROFILE=research python3.12 deploy_aws.py --region us-east-2
+AWS_PROFILE=research python3.12 deploy_aws.py --region us-east-2 \
+  --expected-account YOUR_AWS_ACCOUNT_ID
 ```
 
 The script verifies the target account, checks for a default VPC, builds an
@@ -133,7 +133,7 @@ ARNs. Reproduce the baseline with:
 
 ```bash
 uvx iam-policy-autopilot@latest generate-policies "$PWD/bedrock_client.py" \
-  --region us-east-2 --account 263429641790 --service-hints bedrock-runtime --pretty
+  --region us-east-2 --account YOUR_AWS_ACCOUNT_ID --service-hints bedrock-runtime --pretty
 ```
 
 The Docker health check requires no credentials. A locally started container
@@ -197,3 +197,13 @@ CloudWatch log groups, empty ECS cluster, and the three IAM roles (detach their
 policies first). Do not delete a shared VPC, shared load balancer, or unrelated
 resources. Deleting only tasks is insufficient: ECS will restart them, and a
 remaining load balancer can continue to incur charges.
+
+## Repository privacy
+
+Published examples omit account-specific ARNs, account IDs, and former service
+endpoints. `YOUR_AWS_ACCOUNT_ID` is a placeholder; supply your own 12-digit
+account ID explicitly. AWS-owned model/policy ARNs and runtime-generated ARNs
+remain where needed for working IAM policies and deployment code. The generated
+baseline policy uses `YOUR_AWS_ACCOUNT_ID` and is an illustrative template, not
+a policy to deploy unchanged. Deployment responses remain in ignored
+`deployment.json`; review screenshots and logs before adding new evidence.

@@ -168,7 +168,9 @@ brag-output/              Reproducible launch-video plan and composition
 ## Deployment, costs, and limits
 
 [Follow AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) for model access, IAM, Docker,
-deployment, verification, costs, and cleanup. Fargate, the load balancer, IPv4,
+deployment, verification, costs, and cleanup. Deployment requires an explicit
+`--expected-account YOUR_AWS_ACCOUNT_ID`; published examples omit private
+deployment identifiers. Fargate, the load balancer, IPv4,
 logs, image storage, and Bedrock input/output usage incur charges. The live demo was removed on October 10, 2026. The application has no
 login or per-user usage quota.
 

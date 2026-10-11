@@ -12,9 +12,9 @@
               "bedrock:InvokeTool"
             ],
             "Resource": [
-              "arn:aws:bedrock::263429641790:system-tool/*",
-              "arn:aws:bedrock:us-east-2:263429641790:guardrail-profile/*",
-              "arn:aws:bedrock:us-east-2:263429641790:guardrail/*"
+              "arn:aws:bedrock::YOUR_AWS_ACCOUNT_ID:system-tool/*",
+              "arn:aws:bedrock:us-east-2:YOUR_AWS_ACCOUNT_ID:guardrail-profile/*",
+              "arn:aws:bedrock:us-east-2:YOUR_AWS_ACCOUNT_ID:guardrail/*"
             ]
           },
           {
