@@ -185,10 +185,9 @@ quote checks do not eliminate hallucination or every prompt-injection attempt.
 
 Preview the responsive walkthrough with `python -m http.server 8765 --directory doc`.
 Open http://localhost:8765. Architecture drawings include editable sources and
-companion guides. The short [project video](doc/assets/brag.mp4) uses the
-[BRAG skill](https://github.com/latent-spaces/brag); drawings use the
+companion guides. Watch the short [project video](doc/assets/brag.mp4). Drawings use the
 [AWS architecture diagram skill](https://github.com/vidanov/aws-architecture-diagram-skill).
-Both skills are installed locally for future work. See [doc/README.md](doc/README.md)
+See [doc/README.md](doc/README.md)
 for the showcase's preview and asset workflow. GitHub Pages publishes `doc/`
 through [.github/workflows/pages.yml](.github/workflows/pages.yml), without a
 Jekyll build. In repository Settings → Pages, the source must be **GitHub Actions**;
